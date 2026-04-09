@@ -1,0 +1,54 @@
+{
+  "name": "sgilc-inventario",
+  "version": "0.1.0",
+  "description": "Aplicación de escritorio portable para gestión de inventario de laboratorio de cómputo.",
+  "main": "src/main/main.js",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron . --disable-gpu",
+    "dev": "electron . --disable-gpu --no-sandbox",
+    "pack:win": "electron-builder --win portable",
+    "pack:linux": "electron-builder --linux AppImage",
+    "pack:dir": "electron-builder --dir"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "exceljs": "^4.4.0",
+    "sql.js": "^1.14.1"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.sgilc.inventario",
+    "productName": "SGILC Inventario",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "assets/**",
+      "package.json"
+    ],
+    "npmRebuild": false,
+    "asar": true,
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        "portable"
+      ]
+    }
+  }
+}
