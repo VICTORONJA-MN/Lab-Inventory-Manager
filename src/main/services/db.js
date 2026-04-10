@@ -175,14 +175,5 @@ async function initDatabase() {
     await run('UPDATE usuarios SET rol_id = ? WHERE rol_id IS NULL;', [usuarioRole.id]).catch(() => {});
   }
 
-  const existingAdmin = await get('SELECT id FROM usuarios WHERE username = ?;', ['admin']);
-  if (!existingAdmin && adminRole) {
-    const hash = await bcrypt.hash('12345', 10);
-    await run(
-      'INSERT INTO usuarios (username, password_hash, nombre_completo, rol_id, avatar_path) VALUES (?, ?, ?, ?, ?);',
-      ['admin', hash, 'victor Hugo Mulato', adminRole.id, 'default.png']
-    );
-  }
 }
-
 module.exports = { getDbPaths, initDatabase, run, get, all };
