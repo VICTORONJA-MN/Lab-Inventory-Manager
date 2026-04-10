@@ -11,8 +11,7 @@ const mantenimientos = require('./services/mantenimientos');
 
 let mainWindow;
 
-// Evita crashes comunes de Electron en Linux (especialmente ejecutando como root
-// o en entornos sin aceleración gráfica estable).
+// Evita crashes comunes de Electron en Linux
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('disable-gpu');
   app.disableHardwareAcceleration();
@@ -21,7 +20,7 @@ if (typeof process.getuid === 'function' && process.getuid() === 0) {
   app.commandLine.appendSwitch('no-sandbox');
 }
 
-function createWindow() {
+async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -47,10 +46,24 @@ function createWindow() {
     console.error('[did-fail-load]', errorCode, errorDescription, validatedURL);
   });
 
+  // --- LÓGICA DE DETECCIÓN DE PRIMER INICIO ---
+  let needsBootstrap = false;
+  try {
+    const listaUsuarios = await usuarios.listUsuarios();
+    needsBootstrap = (listaUsuarios.length === 0);
+  } catch (err) {
+    console.error('[Main] Error al verificar usuarios:', err);
+  }
+
   const preferredIndexPath = path.join(__dirname, 'src/index.html');
   const fallbackIndexPath = path.join(__dirname, '../renderer/index.html');
   const indexPath = fs.existsSync(preferredIndexPath) ? preferredIndexPath : fallbackIndexPath;
-  mainWindow.loadFile(indexPath);
+
+  // Cargamos el archivo pasando el estado de bootstrap por query string
+  mainWindow.loadFile(indexPath, { 
+    query: { bootstrap: needsBootstrap ? 'true' : 'false' } 
+  });
+  // --------------------------------------------
 
   mainWindow.webContents.on('did-finish-load', async () => {
     try {
@@ -64,7 +77,6 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => mainWindow.show());
 }
 
-// Función para chequear mantenimientos próximos y mostrar notificaciones
 async function checkMantenimientosNotificaciones() {
   try {
     const proximos = await mantenimientos.getMantenimientosProximos();
@@ -74,7 +86,7 @@ async function checkMantenimientosNotificaciones() {
         const notif = new Notification({
           title: 'Mantenimientos Próximos',
           body: `Hay ${proximos.length} mantenimiento(s) esta semana. Revisa la sección de Mantenimientos.`,
-          icon: path.join(__dirname, '../assets/icon.png') // Asumiendo que hay un icono
+          icon: path.join(__dirname, '../assets/icon.png')
         });
         notif.show();
       }
@@ -86,16 +98,15 @@ async function checkMantenimientosNotificaciones() {
 
 app.whenReady().then(async () => {
   const { baseDir, uploadsPath } = getDbPaths();
-  fs.mkdirSync(baseDir, { recursive: true });
-  fs.mkdirSync(uploadsPath, { recursive: true });
+  if (!fs.existsSync(baseDir)) fs.mkdirSync(baseDir, { recursive: true });
+  if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
   await initDatabase();
-  createWindow();
+  await createWindow();
 
-  // Chequear mantenimientos al iniciar
   setTimeout(() => {
     checkMantenimientosNotificaciones();
-  }, 5000); // 5 segundos después de iniciar
+  }, 5000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -107,7 +118,6 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('app:getPaths', async () => getDbPaths());
-
 ipcMain.handle('auth:sessionStatus', async () => auth.sessionStatus());
 ipcMain.handle('auth:login', async (_evt, payload) => auth.login(payload));
 ipcMain.handle('auth:logout', async () => auth.logout());
@@ -141,21 +151,16 @@ ipcMain.handle('backups:importDb', async () => backups.importDb({ dialog }));
 ipcMain.handle('reportes:generar', async (_evt, payload) => {
   const res = await reportes.generar(payload);
   if (!res.ok) return res;
-
   const fileName = `reporte_equipos_${new Date().toISOString().slice(0, 10)}.xlsx`;
   const result = await dialog.showSaveDialog(null, {
     title: 'Guardar Reporte Excel',
     defaultPath: fileName,
     filters: [{ name: 'Excel Files', extensions: ['xlsx'] }]
   });
-
   if (result.canceled) return { ok: false, error: 'Cancelado por usuario.' };
-
-  const fs = require('fs');
   fs.writeFileSync(result.filePath, Buffer.from(res.buffer));
   return { ok: true, count: res.count, filePath: result.filePath };
 });
 
 ipcMain.handle('reportes:getCategorias', async () => reportes.getCategorias());
 setInterval(checkMantenimientosNotificaciones, 6 * 60 * 60 * 1000);
-

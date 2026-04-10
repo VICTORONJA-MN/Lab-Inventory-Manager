@@ -95,6 +95,14 @@ export function renderAuth({ mountId }) {
   const mount = qs(`#${mountId}`);
   clear(mount);
 
+  // Capturamos el estado de bootstrap desde el proceso principal si viene en la URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const forceBootstrap = urlParams.get('bootstrap') === 'true';
+  
+  if (forceBootstrap) {
+    store.setNeedsBootstrap(true);
+  }
+
   const wrap = el('div', { class: 'auth-wrap' }, [
     el('div', { class: 'auth-container' }, [
       el('div', { class: 'auth-title' }, [
@@ -109,4 +117,3 @@ export function renderAuth({ mountId }) {
   if (needsBootstrap) renderBootstrap({ root: wrap });
   else renderLogin({ root: wrap });
 }
-
