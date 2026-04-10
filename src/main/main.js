@@ -10,7 +10,7 @@ const reportes = require('./services/reportes');
 const mantenimientos = require('./services/mantenimientos');
 
 let mainWindow;
-
+/*
 // Para evitar problemas gráficos en Linux y al correr como root )
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('disable-gpu');
@@ -19,7 +19,7 @@ if (process.platform === 'linux') {
 if (typeof process.getuid === 'function' && process.getuid() === 0) {
   app.commandLine.appendSwitch('no-sandbox');
 }
-
+*/
 async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
