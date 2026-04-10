@@ -11,7 +11,7 @@ const mantenimientos = require('./services/mantenimientos');
 
 let mainWindow;
 
-// Evita crashes comunes de Electron en Linux
+// Para evitar problemas gráficos en Linux y al correr como root )
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('disable-gpu');
   app.disableHardwareAcceleration();

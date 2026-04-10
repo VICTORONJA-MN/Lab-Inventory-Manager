@@ -95,7 +95,7 @@ export function renderAuth({ mountId }) {
   const mount = qs(`#${mountId}`);
   clear(mount);
 
-  // Capturamos el estado de bootstrap desde el proceso principal si viene en la URL
+  //capturara  el estado de bootstrap desde el proceso principal si viene en la URL
   const urlParams = new URLSearchParams(window.location.search);
   const forceBootstrap = urlParams.get('bootstrap') === 'true';
   
