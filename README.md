@@ -14,6 +14,12 @@
 * **Arquitectura Portable:** Base de datos local autogestionada que no requiere configuraciones complejas de servidor.
 
 ---
+## 🔑 Credenciales predetermindas (primer inicio de sesión)
+```bash
+usuario: admin
+contraseña: 12345
+```
+---
 
 ## 📸 Capturas de Pantalla
 
