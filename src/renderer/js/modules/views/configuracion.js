@@ -1,6 +1,7 @@
 import { el, clear } from '../dom.js';
 import { openModal, closeModal } from '../modal.js';
 import { store } from '../store.js';
+import { success, error } from '../notify.js';
 
 function isAdmin() {
   return store.get().session?.nombre_rol === 'Admin';
@@ -19,18 +20,16 @@ function userForm({ roles, initial, onSubmit }) {
     el('div', { class: 'field' }, [el('label', { text: 'Username *' }), username]),
     el('div', { class: 'field' }, [el('label', { text: 'Rol *' }), role]),
     el('div', { class: 'field span-2' }, [el('label', { text: 'Nombre completo' }), nombre]),
-    el('div', { class: 'field span-2' }, [el('label', { text: initial ? 'Password (dejar vacío para no cambiar)' : 'Password *' }), password]),
-    el('div', { class: 'span-2' }, [errorBox])
+    el('div', { class: 'field span-2' }, [el('label', { text: initial ? 'Password (dejar vacío para no cambiar)' : 'Password *' }), password])
   ]);
 
   async function submit() {
-    clear(errorBox);
     if (!username.value.trim()) {
-      errorBox.appendChild(el('div', { class: 'error', text: 'Username es obligatorio.' }));
+      error('Username es obligatorio.');
       return;
     }
     if (!initial && password.value.trim().length < 4) {
-      errorBox.appendChild(el('div', { class: 'error', text: 'Password mínimo 4.' }));
+      error('Password mínimo 4.');
       return;
     }
     await onSubmit({
@@ -39,7 +38,7 @@ function userForm({ roles, initial, onSubmit }) {
       nombre_completo: nombre.value.trim(),
       password: password.value,
       rol_id: Number(role.value)
-    }, errorBox);
+    });
   }
 
   return { node, submit };
@@ -72,12 +71,13 @@ export async function renderConfiguracion({ root }) {
       const form = userForm({
         roles,
         initial: null,
-        onSubmit: async (payload, errorBox) => {
+        onSubmit: async (payload) => {
           const res = await window.api.usuarios.create(payload);
           if (!res.ok) {
-            errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo crear.' }));
+            error(res.error || 'No se pudo crear.');
             return;
           }
+          success('Usuario creado correctamente.');
           closeModal();
           renderConfiguracion({ root });
         }
@@ -132,12 +132,13 @@ export async function renderConfiguracion({ root }) {
               const form = userForm({
                 roles,
                 initial: u,
-                onSubmit: async (payload, errorBox) => {
+                onSubmit: async (payload) => {
                   const res = await window.api.usuarios.update(payload);
                   if (!res.ok) {
-                    errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo actualizar.' }));
+                    error(res.error || 'No se pudo actualizar.');
                     return;
                   }
+                  success('Usuario actualizado correctamente.');
                   closeModal();
                   renderConfiguracion({ root });
                 }
@@ -160,10 +161,10 @@ export async function renderConfiguracion({ root }) {
               if (!ok) return;
               const res = await window.api.usuarios.delete(u.id);
               if (!res.ok) {
-                clear(msg);
-                msg.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo eliminar.' }));
+                error(res.error || 'No se pudo eliminar.');
                 return;
               }
+              success('Usuario eliminado correctamente.');
               renderConfiguracion({ root });
             }
           }, ['Eliminar'])

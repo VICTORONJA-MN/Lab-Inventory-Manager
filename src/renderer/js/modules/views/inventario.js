@@ -2,6 +2,7 @@ import { el, clear, formatDateTime } from '../dom.js';
 import { openModal, closeModal } from '../modal.js';
 import { store } from '../store.js';
 import { resolveUploadSrc } from '../media.js';
+import { success, error } from '../notify.js';
 
 function estadoLabel(e) {
   if (e === 'activo') return 'Activo';
@@ -45,8 +46,7 @@ function makeEquipoForm({ initial, onSubmit }) {
     el('div', { class: 'field span-2' }, [el('label', { text: 'Ubicación' }), ubicacion]),
     el('div', { class: 'field span-2' }, [el('label', { text: 'Observaciones' }), observaciones]),
     el('div', { class: 'field' }, [el('label', { text: 'Próximo Mantenimiento (opcional)' }), fechaMantenimiento]),
-    el('div', { class: 'field span-2' }, [el('label', { text: 'Foto (opcional)' }), file, fotoInfo]),
-    el('div', { class: 'span-2' }, [errorBox])
+    el('div', { class: 'field span-2' }, [el('label', { text: 'Foto (opcional)' }), file, fotoInfo])
   ]);
 
   async function readFileBase64(f) {
@@ -61,9 +61,8 @@ function makeEquipoForm({ initial, onSubmit }) {
   }
 
   async function submit() {
-    clear(errorBox);
     if (!nombre.value.trim() || !categoria.value.trim()) {
-      errorBox.appendChild(el('div', { class: 'error', text: 'Nombre y categoría son obligatorios.' }));
+      error('Nombre y categoría son obligatorios.');
       return;
     }
 
@@ -77,7 +76,7 @@ function makeEquipoForm({ initial, onSubmit }) {
         bytesBase64
       });
       if (!photoRes.ok) {
-        errorBox.appendChild(el('div', { class: 'error', text: photoRes.error || 'No se pudo guardar la foto.' }));
+        error(photoRes.error || 'No se pudo guardar la foto.');
         return;
       }
       foto_url = photoRes.storedPath;
@@ -93,7 +92,7 @@ function makeEquipoForm({ initial, onSubmit }) {
       observaciones: observaciones.value.trim(),
       foto_url,
       fecha_mantenimiento: fechaMantenimiento.value || null
-    }, errorBox);
+    });
   }
 
   return { node: form, submit };
@@ -159,12 +158,13 @@ export async function renderInventario({ root }) {
     onClick: async () => {
       const form = makeEquipoForm({
         initial: null,
-        onSubmit: async (payload, errorBox) => {
+        onSubmit: async (payload) => {
           const res = await window.api.equipos.create(payload);
           if (!res.ok) {
-            errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo crear.' }));
+            error(res.error || 'No se pudo crear.');
             return;
           }
+          success('Equipo creado correctamente.');
           closeModal();
           await renderList(true);
         }
@@ -264,12 +264,13 @@ export async function renderInventario({ root }) {
     const equipo = await window.api.equipos.get(id);
     const form = makeEquipoForm({
       initial: equipo,
-      onSubmit: async (payload, errorBox) => {
+      onSubmit: async (payload) => {
         const res = await window.api.equipos.update(payload);
         if (!res.ok) {
-          errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo actualizar.' }));
+          error(res.error || 'No se pudo actualizar.');
           return;
         }
+        success('Equipo actualizado correctamente.');
         closeModal();
         await renderList(true);
       }
@@ -289,9 +290,10 @@ export async function renderInventario({ root }) {
     if (!ok) return;
     try {
       await window.api.equipos.delete(id);
+      success('Equipo eliminado correctamente.');
       await renderList(true);
     } catch (e) {
-      alert('No se pudo eliminar (permiso o error).');
+      error('No se pudo eliminar (permiso o error).');
     }
   }
 

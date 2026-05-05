@@ -1,6 +1,7 @@
 import { el, qs, clear } from '../dom.js';
 import { store } from '../store.js';
 import { openModal, closeModal } from '../modal.js';
+import { success, error } from '../notify.js';
 
 async function loadMantenimientos() {
   try {
@@ -138,16 +139,26 @@ export async function renderMantenimientos({ root }) {
             const form = await renderMantenimientoForm({
               mantenimiento: m,
               onSave: async (data) => {
-                await window.api.mantenimientos.update(data);
-                renderMantenimientos({ root });
+                try {
+                  await window.api.mantenimientos.update(data);
+                  success('Mantenimiento actualizado correctamente.');
+                  renderMantenimientos({ root });
+                } catch (err) {
+                  error('No se pudo actualizar el mantenimiento.');
+                }
               }
             });
             openModal({ title: 'Editar Mantenimiento', bodyNode: form });
           }}),
           el('button', { class: 'btn small danger', text: 'Eliminar', onClick: async () => {
             if (confirm('¿Eliminar este mantenimiento?')) {
-              await window.api.mantenimientos.delete(m.id);
-              renderMantenimientos({ root });
+              try {
+                await window.api.mantenimientos.delete(m.id);
+                success('Mantenimiento eliminado correctamente.');
+                renderMantenimientos({ root });
+              } catch (err) {
+                error('No se pudo eliminar el mantenimiento.');
+              }
             }
           }})
         ])

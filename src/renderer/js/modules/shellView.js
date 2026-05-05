@@ -8,6 +8,7 @@ import { renderReportes } from './views/reportes.js';
 import { renderConfiguracion } from './views/configuracion.js';
 import { renderPerfil } from './views/perfil.js';
 import { renderAuth } from './authView.js';
+import { info } from './notify.js';
 import { resolveUploadSrc } from './media.js';
 
 const routes = [
@@ -107,7 +108,10 @@ export function renderShell({ mountId }) {
         onClick: async () => {
           await window.api.auth.logout();
           store.setSession(null);
-          renderAuth({ mountId: 'app' });
+          info('Sesión cerrada correctamente.');
+          setTimeout(() => {
+            renderAuth({ mountId: 'app' });
+          }, 500);
         }
       }, [
         el('span', { class: 'button-icon', 'aria-hidden': 'true' }, ['➜]']),

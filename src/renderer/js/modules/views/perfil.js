@@ -1,6 +1,7 @@
 import { el, clear } from '../dom.js';
 import { store } from '../store.js';
 import { resolveUploadSrc } from '../media.js';
+import { success, error } from '../notify.js';
 
 function avatarInitials(username = '') {
   return username
@@ -41,8 +42,6 @@ export async function renderPerfil({ root }) {
 
   const isAdmin = s.nombre_rol === 'Admin';
   const avatarSrc = resolveUploadSrc(s.avatar_path);
-  const errorBox = el('div');
-  const successBox = el('div');
 
   const avatarImage = avatarSrc
     ? el('img', { src: avatarSrc, alt: 'Avatar' })
@@ -57,15 +56,12 @@ export async function renderPerfil({ root }) {
   }, ['Subir avatar']);
 
   fileInput.addEventListener('change', async () => {
-    clear(errorBox);
-    clear(successBox);
-
     const file = fileInput.files?.[0];
     if (!file) return;
     const bytesBase64 = await readFileBase64(file);
     const res = await window.api.usuarios.saveAvatar({ originalName: file.name, bytesBase64 });
     if (!res.ok) {
-      errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo cambiar el avatar.' }));
+      error(res.error || 'No se pudo cambiar el avatar.');
       return;
     }
 
@@ -73,6 +69,7 @@ export async function renderPerfil({ root }) {
     if (sessionStatus?.user) {
       store.setSession(sessionStatus.user);
     }
+    success('Avatar actualizado correctamente.');
     renderPerfil({ root });
   });
 
@@ -85,8 +82,6 @@ export async function renderPerfil({ root }) {
     type: 'button',
     disabled: !isAdmin,
     onClick: async () => {
-      clear(errorBox);
-      clear(successBox);
       const payload = {
         id: s.id,
         username: usernameInput.value.trim(),
@@ -95,14 +90,14 @@ export async function renderPerfil({ root }) {
       };
       const res = await window.api.usuarios.update(payload);
       if (!res.ok) {
-        errorBox.appendChild(el('div', { class: 'error', text: res.error || 'No se pudo actualizar el perfil.' }));
+        error(res.error || 'No se pudo actualizar el perfil.');
         return;
       }
       const sessionStatus = await window.api.auth.sessionStatus();
       if (sessionStatus?.user) {
         store.setSession(sessionStatus.user);
       }
-      successBox.appendChild(el('div', { class: 'success', text: 'Perfil actualizado.' }));
+      success('Perfil actualizado correctamente.');
       renderPerfil({ root });
     }
   }, ['Guardar cambios']);
@@ -149,8 +144,5 @@ export async function renderPerfil({ root }) {
       el('div', { class: 'toolbar' }, [saveBtn])
     ])
   ]));
-
-  root.appendChild(errorBox);
-  root.appendChild(successBox);
 }
 

@@ -1,5 +1,6 @@
 import { el, clear, formatDateTime } from '../dom.js';
 import { store } from '../store.js';
+import { success, error } from '../notify.js';
 
 export async function renderReportes({ root }) {
   clear(root);
@@ -101,10 +102,10 @@ export async function renderReportes({ root }) {
       };
       const res = await window.api.reportes.generar(payload);
       if (!res.ok) {
-        alert(res.error || 'Error al generar reporte.');
+        error(res.error || 'Error al generar reporte.');
         return;
       }
-      alert(`Reporte generado con ${res.count} registros. Guardado en: ${res.filePath}`);
+      success(`Reporte generado con ${res.count} registros. Guardado en: ${res.filePath}`);
     }
   }, ['Generar Reporte Excel']);
 

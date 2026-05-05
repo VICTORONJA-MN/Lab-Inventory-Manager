@@ -1,5 +1,6 @@
 import { el, clear } from '../dom.js';
 import { store } from '../store.js';
+import { success, error, warning } from '../notify.js';
 
 export async function renderBackups({ root }) {
   clear(root);
@@ -21,21 +22,18 @@ export async function renderBackups({ root }) {
     return;
   }
 
-  const msg = el('div');
-
   const exportBtn = el('button', {
     class: 'btn primary',
     type: 'button',
     disabled: !isAdmin,
     onClick: async () => {
-      clear(msg);
       const res = await window.api.backups.exportDb();
       if (res?.canceled) return;
       if (!res?.ok) {
-        msg.appendChild(el('div', { class: 'error', text: 'No se pudo exportar.' }));
+        error('No se pudo exportar.');
         return;
       }
-      msg.appendChild(el('div', { class: 'success', text: 'Exportación completada.' }));
+      success('Exportación completada correctamente.');
     }
   }, ['📤 Exportar DB']);
 
@@ -44,20 +42,18 @@ export async function renderBackups({ root }) {
     type: 'button',
     disabled: !isAdmin,
     onClick: async () => {
-      clear(msg);
       const ok = confirm('¿Importar DB? Esto reemplaza la base actual.');
       if (!ok) return;
       const res = await window.api.backups.importDb();
       if (res?.canceled) return;
       if (!res?.ok) {
-        msg.appendChild(el('div', { class: 'error', text: 'No se pudo importar.' }));
+        error('No se pudo importar.');
         return;
       }
-      msg.appendChild(el('div', { class: 'success', text: 'Importación completada. Reinicia la app para recargar.' }));
+      warning('Importación completada. Reinicia la app para recargar.');
     }
   }, ['📥 Importar DB']);
 
   root.appendChild(el('div', { class: 'toolbar' }, [exportBtn, importBtn]));
-  root.appendChild(msg);
 }
 
