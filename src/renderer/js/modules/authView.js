@@ -41,6 +41,11 @@ function renderBootstrap({ root }) {
       clear(msgBox);
       msgBox.appendChild(el('div', { class: 'success' }, [msg]));
       store.setNeedsBootstrap(false);
+      
+      // Recargar la página automáticamente después de 2 segundos
+      setTimeout(async () => {
+        await window.api.app.reload();
+      }, 2000);
     }
   }, ['Crear Admin']);
 

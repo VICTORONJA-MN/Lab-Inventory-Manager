@@ -118,6 +118,11 @@ app.on('window-all-closed', () => {
 });
 
 ipcMain.handle('app:getPaths', async () => getDbPaths());
+ipcMain.handle('app:reload', async () => {
+  if (mainWindow) {
+    mainWindow.reload();
+  }
+});
 ipcMain.handle('auth:sessionStatus', async () => auth.sessionStatus());
 ipcMain.handle('auth:login', async (_evt, payload) => auth.login(payload));
 ipcMain.handle('auth:logout', async () => auth.logout());

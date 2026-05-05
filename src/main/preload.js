@@ -6,6 +6,10 @@ function invoke(channel, payload) {
 
 contextBridge.exposeInMainWorld('api', {
   getPaths: () => invoke('app:getPaths'),
+  app: {
+    reload: () => invoke('app:reload'),
+    getPaths: () => invoke('app:getPaths')
+  },
   auth: {
     sessionStatus: () => invoke('auth:sessionStatus'),
     login: (payload) => invoke('auth:login', payload),
