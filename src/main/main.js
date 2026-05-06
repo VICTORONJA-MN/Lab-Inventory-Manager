@@ -43,8 +43,8 @@ async function createWindow() {
   // --- LÓGICA DE DETECCIÓN DE PRIMER INICIO ---
   let needsBootstrap = false;
   try {
-    const listaUsuarios = await usuarios.listUsuarios();
-    needsBootstrap = (listaUsuarios.length === 0);
+    const status = await auth.sessionStatus();
+    needsBootstrap = !!status.needsBootstrap;
   } catch (err) {
     console.error('[Main] Error al verificar usuarios:', err);
   }

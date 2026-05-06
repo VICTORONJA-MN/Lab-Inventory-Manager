@@ -2,6 +2,7 @@ import { el, clear } from '../dom.js';
 import { openModal, closeModal } from '../modal.js';
 import { store } from '../store.js';
 import { success, error } from '../notify.js';
+import { getTheme, toggleTheme } from '../theme.js';
 
 function isAdmin() {
   return store.get().session?.nombre_rol === 'Admin';
@@ -44,14 +45,56 @@ function userForm({ roles, initial, onSubmit }) {
   return { node, submit };
 }
 
+function buildThemeSwitch(root) {
+  const current = getTheme();
+  const isDark = current === 'dark';
+
+  // SVG Luna (tema oscuro activo → ofrecer cambiar a claro)
+  const moonSvg = `<svg width="18" height="18" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15.5 11A4.5 4.5 0 0 1 11 15.5 4.5 4.5 0 0 1 6.5 11 4.5 4.5 0 0 1 11 6.5c.17 0 .34.01.5.03A5.5 5.5 0 1 0 15.5 11Z"
+      fill="currentColor" stroke="currentColor" stroke-width="1.2"/>
+  </svg>`;
+
+  // SVG Sol (tema claro activo → ofrecer cambiar a oscuro)
+  const sunSvg = `<svg width="18" height="18" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="11" cy="11" r="4.5" fill="currentColor"/>
+    <path d="M11 3v2M11 17v2M3 11h2M17 11h2M5.64 5.64l1.41 1.41M13.95 13.95l1.41 1.41M5.64 16.36l1.41-1.41M13.95 8.05l1.41-1.41"
+      stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`;
+
+  const iconWrap = el('span', { class: 'theme-switch-icon', 'aria-hidden': 'true' });
+  iconWrap.innerHTML = isDark ? moonSvg : sunSvg;
+
+  const label = el('span', {
+    style: 'font-size:13px; color:var(--muted); margin-right:4px; white-space:nowrap;',
+    text: isDark ? 'Tema claro' : 'Tema oscuro'
+  });
+
+  const btn = el('button', {
+    class: 'btn theme-switch',
+    type: 'button',
+    style: 'display:inline-flex; align-items:center; gap:8px; width:auto; padding:10px 16px; border-radius:999px;',
+    title: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
+    onClick: () => {
+      toggleTheme();
+      // Re-render completo para que todo actualice
+      renderConfiguracion({ root });
+    }
+  }, [label, iconWrap]);
+
+  return btn;
+}
+
 export async function renderConfiguracion({ root }) {
   clear(root);
+
   root.appendChild(
     el('div', { class: 'page-title' }, [
       el('div', {}, [
         el('h2', { text: 'Configuración' }),
         el('p', { class: 'hint', text: 'Gestión de usuarios y permisos (solo Admin).' })
-      ])
+      ]),
+      buildThemeSwitch(root)
     ])
   );
 
@@ -179,7 +222,7 @@ export async function renderConfiguracion({ root }) {
   const usuarioRole = roles.find((r) => r.nombre_rol === 'Usuario');
   if (usuarioRole) {
     const canCreate = el('input', { type: 'checkbox', checked: usuarioRole.can_create ? 'checked' : null });
-    const canEdit = el('input', { type: 'checkbox', checked: usuarioRole.can_edit ? 'checked' : null });
+    const canEdit   = el('input', { type: 'checkbox', checked: usuarioRole.can_edit   ? 'checked' : null });
     const canDelete = el('input', { type: 'checkbox', checked: usuarioRole.can_delete ? 'checked' : null });
 
     const savePerms = el('button', {
@@ -190,7 +233,7 @@ export async function renderConfiguracion({ root }) {
         const res = await window.api.roles.update({
           role_id: usuarioRole.id,
           can_create: !!canCreate.checked,
-          can_edit: !!canEdit.checked,
+          can_edit:   !!canEdit.checked,
           can_delete: !!canDelete.checked
         });
         if (!res.ok) {
@@ -205,12 +248,11 @@ export async function renderConfiguracion({ root }) {
     root.appendChild(el('div', { class: 'card span-12' }, [
       el('div', { style: 'font-weight:900', text: 'Permisos del rol "Usuario"' }),
       el('div', { class: 'perm-grid' }, [
-        el('div', { class: 'perm' }, [el('div', { text: 'Crear' }), canCreate]),
-        el('div', { class: 'perm' }, [el('div', { text: 'Editar' }), canEdit]),
+        el('div', { class: 'perm' }, [el('div', { text: 'Crear' }),   canCreate]),
+        el('div', { class: 'perm' }, [el('div', { text: 'Editar' }),  canEdit]),
         el('div', { class: 'perm' }, [el('div', { text: 'Eliminar' }), canDelete])
       ]),
       el('div', { class: 'toolbar' }, [savePerms])
     ]));
   }
 }
-

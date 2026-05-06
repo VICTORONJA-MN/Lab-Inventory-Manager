@@ -1,6 +1,9 @@
 import { renderAuth } from './modules/authView.js';
 import { renderShell } from './modules/shellView.js';
 import { store } from './modules/store.js';
+import { applyThemeOnLoad } from './modules/theme.js';
+
+applyThemeOnLoad();
 
 async function bootstrap() {
   try {

@@ -93,16 +93,16 @@ function renderLogin({ root }) {
   root.appendChild(card);
 }
 
-export function renderAuth({ mountId }) {
+export async function renderAuth({ mountId }) {
   const mount = qs(`#${mountId}`);
   clear(mount);
 
-  //capturara  el estado de bootstrap desde el proceso principal si viene en la URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const forceBootstrap = urlParams.get('bootstrap') === 'true';
-  
-  if (forceBootstrap) {
-    store.setNeedsBootstrap(true);
+  // Consultar estado real desde el main para decidir bootstrap/login
+  try {
+    const status = await window.api.auth.sessionStatus();
+    store.setNeedsBootstrap(!!status.needsBootstrap);
+  } catch (err) {
+    console.error('Error consultando sessionStatus en renderAuth:', err);
   }
 
   const wrap = el('div', { class: 'auth-wrap' }, [
