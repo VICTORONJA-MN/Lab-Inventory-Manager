@@ -1,3 +1,4 @@
+//reportes.js
 const { all, get } = require('./db');
 const { requireSession } = require('./auth');
 const ExcelJS = require('exceljs');

@@ -10,16 +10,7 @@ const reportes = require('./services/reportes');
 const mantenimientos = require('./services/mantenimientos');
 
 let mainWindow;
-/*
-// Para evitar problemas gráficos en Linux y al correr como root )
-if (process.platform === 'linux') {
-  app.commandLine.appendSwitch('disable-gpu');
-  app.disableHardwareAcceleration();
-}
-if (typeof process.getuid === 'function' && process.getuid() === 0) {
-  app.commandLine.appendSwitch('no-sandbox');
-}
-*/
+
 async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -32,13 +23,16 @@ async function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true
+      sandbox: true,
+      // OPTIMIZACIÓN: evita que el renderer se frene si la ventana pierde el foco
+      backgroundThrottling: false,
     }
   });
 
-  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-    console.log(`[renderer console] ${sourceId}:${line} [${level}] ${message}`);
-  });
+  // OPTIMIZACIÓN: eliminado el listener did-finish-load que ejecutaba
+  // executeJavaScript para leer el HTML completo — era innecesario en producción
+  // y añadía una operación costosa en cada carga de página.
+
   mainWindow.webContents.on('render-process-gone', (event, details) => {
     console.error('[renderer crashed]', details);
   });
@@ -59,20 +53,10 @@ async function createWindow() {
   const fallbackIndexPath = path.join(__dirname, '../renderer/index.html');
   const indexPath = fs.existsSync(preferredIndexPath) ? preferredIndexPath : fallbackIndexPath;
 
-  // Cargamos el archivo pasando el estado de bootstrap por query string
-  mainWindow.loadFile(indexPath, { 
-    query: { bootstrap: needsBootstrap ? 'true' : 'false' } 
+  mainWindow.loadFile(indexPath, {
+    query: { bootstrap: needsBootstrap ? 'true' : 'false' }
   });
   // --------------------------------------------
-
-  mainWindow.webContents.on('did-finish-load', async () => {
-    try {
-      const html = await mainWindow.webContents.executeJavaScript('document.documentElement.outerHTML');
-      console.log('[PAGE HTML]', html.slice(0, 500));
-    } catch (err) {
-      console.error('[PAGE HTML ERROR]', err);
-    }
-  });
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
 }

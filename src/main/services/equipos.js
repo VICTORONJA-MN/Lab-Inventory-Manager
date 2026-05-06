@@ -1,6 +1,7 @@
+//equipos.js
 const path = require('path');
 const fs = require('fs');
-const { all, get, run, getDbPaths } = require('./db');
+const { all, get, run, getDbPaths, persistDb } = require('./db');
 const { requireSession } = require('./auth');
 
 function requirePerm(action) {
@@ -61,15 +62,15 @@ async function createEquipo(payload) {
     ]
   );
 
-  // Si se especifica fecha de mantenimiento, crear registro
   if (fecha_mantenimiento) {
-    const { run: runMantenimiento } = require('./db');
-    await runMantenimiento(
+    await run(
       'INSERT INTO mantenimientos (equipo_id, fecha_proximo) VALUES (?, ?);',
       [res.lastID, fecha_mantenimiento]
     );
   }
 
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true, id: res.lastID };
 }
 
@@ -103,24 +104,25 @@ async function updateEquipo(payload) {
     ]
   );
 
-  // Gestionar mantenimiento
   if (fecha_mantenimiento) {
     const existingMantenimiento = await get('SELECT id FROM mantenimientos WHERE equipo_id = ? AND estado = ?;', [id, 'pendiente']);
     if (existingMantenimiento) {
-      // Actualizar fecha si ya existe pendiente
       await run('UPDATE mantenimientos SET fecha_proximo = ? WHERE id = ?;', [fecha_mantenimiento, existingMantenimiento.id]);
     } else {
-      // Crear nuevo si no existe
       await run('INSERT INTO mantenimientos (equipo_id, fecha_proximo) VALUES (?, ?);', [id, fecha_mantenimiento]);
     }
   }
 
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
 async function deleteEquipo(id) {
   requirePerm('delete');
   await run('DELETE FROM equipos WHERE id = ?;', [id]);
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
@@ -137,6 +139,7 @@ async function savePhoto({ equipoId, originalName, bytesBase64 }) {
   const buffer = Buffer.from(bytesBase64, 'base64');
   fs.writeFileSync(filePath, buffer);
 
+  // savePhoto solo guarda archivo en disco, no toca la DB — no se necesita persistDb()
   return { ok: true, storedPath: fileName };
 }
 
@@ -155,5 +158,4 @@ module.exports = {
   updateEquipo,
   deleteEquipo,
   savePhoto
-}
-
+};

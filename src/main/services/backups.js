@@ -1,11 +1,16 @@
+//backups.js
 const fs = require('fs');
 const path = require('path');
-const { getDbPaths } = require('./db');
+const { getDbPaths, persistDb } = require('./db');
 const { requireAdmin } = require('./auth');
 
 async function exportDb({ dialog }) {
   requireAdmin();
   const { dbPath } = getDbPaths();
+
+  // OPTIMIZACIÓN: forzar un persist antes de exportar para asegurar
+  // que el archivo en disco esté al día con el estado en memoria
+  persistDb();
 
   const res = await dialog.showSaveDialog({
     title: 'Exportar base de datos',
@@ -35,4 +40,3 @@ async function importDb({ dialog }) {
 }
 
 module.exports = { exportDb, importDb };
-

@@ -1,5 +1,6 @@
+//auth.js
 const bcrypt = require('bcryptjs');
-const { get, run } = require('./db');
+const { get, run, persistDb } = require('./db');
 
 let currentSession = null;
 
@@ -72,6 +73,8 @@ async function bootstrapAdmin({ username, password, nombre_completo }) {
     [username, hash, nombre_completo || null, adminRole.id, 'default.png']
   );
 
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
@@ -95,4 +98,3 @@ function requireAdmin() {
 }
 
 module.exports = { sessionStatus, login, logout, bootstrapAdmin, requireSession, requireAdmin };
-

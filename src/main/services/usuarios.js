@@ -1,7 +1,8 @@
+//usuarios.js
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const { all, get, run, getDbPaths } = require('./db');
+const { all, get, run, getDbPaths, persistDb } = require('./db');
 const { requireSession, requireAdmin } = require('./auth');
 
 async function listUsuarios() {
@@ -19,7 +20,7 @@ async function createUsuario(payload) {
   requireAdmin();
   const { username, password, nombre_completo, rol_id } = payload || {};
   if (!username || !String(username).trim()) return { ok: false, error: 'Username es obligatorio.' };
-  if (!password || String(password).trim().length < 4) return { ok: false, error: 'Password m�nimo 4 caracteres.' };
+  if (!password || String(password).trim().length < 4) return { ok: false, error: 'Password mínimo 4 caracteres.' };
 
   const exists = await get('SELECT id FROM usuarios WHERE username = ?;', [String(username).trim()]);
   if (exists) return { ok: false, error: 'El usuario ya existe.' };
@@ -29,6 +30,9 @@ async function createUsuario(payload) {
     'INSERT INTO usuarios (username, password_hash, nombre_completo, rol_id, avatar_path) VALUES (?, ?, ?, ?, ?);',
     [String(username).trim(), hash, nombre_completo || null, rol_id || null, 'default.png']
   );
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
@@ -36,7 +40,7 @@ async function updateUsuario(payload) {
   const session = requireSession();
   const isAdmin = session.nombre_rol === 'Admin';
   const { id, username, nombre_completo, password, rol_id } = payload || {};
-  if (!id) return { ok: false, error: 'Usuario inv�lido.' };
+  if (!id) return { ok: false, error: 'Usuario inválido.' };
   if (!isAdmin && Number(id) !== Number(session.id)) return { ok: false, error: 'No autorizado.' };
 
   const target = await get('SELECT * FROM usuarios WHERE id = ?;', [id]);
@@ -45,11 +49,11 @@ async function updateUsuario(payload) {
   const nextUsername = String(username || target.username || '').trim();
   if (!nextUsername) return { ok: false, error: 'Username es obligatorio.' };
   const sameNameOther = await get('SELECT id FROM usuarios WHERE username = ? AND id <> ?;', [nextUsername, id]);
-  if (sameNameOther) return { ok: false, error: 'El username ya est� en uso.' };
+  if (sameNameOther) return { ok: false, error: 'El username ya está en uso.' };
 
   let nextHash = target.password_hash;
   if (password && String(password).trim()) {
-    if (String(password).trim().length < 4) return { ok: false, error: 'Password m�nimo 4 caracteres.' };
+    if (String(password).trim().length < 4) return { ok: false, error: 'Password mínimo 4 caracteres.' };
     nextHash = await bcrypt.hash(String(password), 10);
   }
 
@@ -62,15 +66,20 @@ async function updateUsuario(payload) {
     [nextUsername, nombre_completo || null, nextHash, nextRoleId, id]
   );
 
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
 async function deleteUsuario(id) {
   const session = requireAdmin();
   const targetId = Number(id);
-  if (!targetId) return { ok: false, error: 'Usuario inv�lido.' };
-  if (targetId === Number(session.id)) return { ok: false, error: 'No puedes eliminar tu propio usuario en sesi�n.' };
+  if (!targetId) return { ok: false, error: 'Usuario inválido.' };
+  if (targetId === Number(session.id)) return { ok: false, error: 'No puedes eliminar tu propio usuario en sesión.' };
   await run('DELETE FROM usuarios WHERE id = ?;', [targetId]);
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
@@ -88,6 +97,9 @@ async function saveAvatar({ originalName, bytesBase64 }) {
   fs.writeFileSync(filePath, buffer);
 
   await run('UPDATE usuarios SET avatar_path = ? WHERE id = ?;', [fileName, session.id]);
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true, storedPath: fileName };
 }
 
@@ -99,13 +111,16 @@ async function listRoles() {
 async function updateRolePerms(payload) {
   requireAdmin();
   const { role_id, can_create, can_edit, can_delete, can_report } = payload || {};
-  if (!role_id) return { ok: false, error: 'Rol inv�lido.' };
+  if (!role_id) return { ok: false, error: 'Rol inválido.' };
   await run(
     `UPDATE roles
      SET can_create = ?, can_edit = ?, can_delete = ?, can_report = ?
      WHERE id = ?;`,
     [can_create ? 1 : 0, can_edit ? 1 : 0, can_delete ? 1 : 0, can_report ? 1 : 0, role_id]
   );
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 

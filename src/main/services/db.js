@@ -44,6 +44,9 @@ async function ensureDb() {
   return dbInstance;
 }
 
+// OPTIMIZACIÓN: persistDb ya NO se llama automáticamente en cada run().
+// Llámala explícitamente después de operaciones de escritura importantes,
+// o usa los servicios que ya la invocan cuando corresponde.
 function persistDb() {
   if (!dbInstance) return;
   const { dbPath } = getDbPaths();
@@ -51,6 +54,8 @@ function persistDb() {
   fs.writeFileSync(dbPath, Buffer.from(data));
 }
 
+// OPTIMIZACIÓN: run() ya no persiste en disco automáticamente.
+// Los servicios deben llamar persistDb() después de cada operación de escritura del usuario.
 function run(sql, params = []) {
   return (async () => {
     const database = await ensureDb();
@@ -58,7 +63,7 @@ function run(sql, params = []) {
     const changes = database.getRowsModified();
     const lastIdResult = database.exec('SELECT last_insert_rowid() AS id;');
     const lastID = lastIdResult[0]?.values?.[0]?.[0] ?? 0;
-    persistDb();
+    // NO se llama persistDb() aquí — se llama desde los servicios cuando aplica
     return { lastID, changes };
   })();
 }
@@ -96,6 +101,7 @@ function all(sql, params = []) {
 
 async function initDatabase() {
   await ensureDb();
+  // PRAGMA va directo sin persistir — solo configura la sesión en memoria
   await run('PRAGMA foreign_keys = ON;');
 
   await run(`
@@ -175,5 +181,9 @@ async function initDatabase() {
     await run('UPDATE usuarios SET rol_id = ? WHERE rol_id IS NULL;', [usuarioRole.id]).catch(() => {});
   }
 
+  // OPTIMIZACIÓN: Una sola escritura al disco al terminar todo el setup inicial,
+  // en lugar de 10+ escrituras individuales como antes.
+  persistDb();
 }
-module.exports = { getDbPaths, initDatabase, run, get, all };
+
+module.exports = { getDbPaths, initDatabase, run, get, all, persistDb };

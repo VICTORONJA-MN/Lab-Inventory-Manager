@@ -1,4 +1,5 @@
-const { all, get, run } = require('./db');
+//mantenimientos.js
+const { all, get, run, persistDb } = require('./db');
 const { requireAdmin } = require('./auth');
 
 async function listMantenimientos() {
@@ -23,7 +24,6 @@ async function getMantenimientoById(id) {
 
 async function createMantenimiento({ equipo_id, fecha_proximo, estado }) {
   requireAdmin();
-  // Verificar que el equipo existe
   const equipo = await get('SELECT id FROM equipos WHERE id = ?;', [equipo_id]);
   if (!equipo) return { ok: false, error: 'Equipo no existe.' };
 
@@ -33,6 +33,9 @@ async function createMantenimiento({ equipo_id, fecha_proximo, estado }) {
     'INSERT INTO mantenimientos (equipo_id, fecha_proximo, estado) VALUES (?, ?, ?);',
     [equipo_id, fecha_proximo, finalEstado]
   );
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
@@ -47,18 +50,23 @@ async function updateMantenimiento({ id, fecha_proximo, estado, fecha_realizado 
     'UPDATE mantenimientos SET fecha_proximo = ?, estado = ?, fecha_realizado = ? WHERE id = ?;',
     [fecha_proximo, finalEstado, fecha_realizado || null, id]
   );
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
 async function deleteMantenimiento(id) {
   requireAdmin();
   await run('DELETE FROM mantenimientos WHERE id = ?;', [id]);
+
+  // OPTIMIZACIÓN: una sola escritura al disco al terminar toda la operación
+  persistDb();
   return { ok: true };
 }
 
 async function getMantenimientosProximos() {
-  // requireSession(); // Remover para permitir notificaciones sin sesión activa
-  // Mantenimientos en los próximos 7 días
+  // Solo lectura — no necesita persistDb()
   const today = new Date();
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
