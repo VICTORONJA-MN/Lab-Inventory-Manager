@@ -1,9 +1,9 @@
 {
-  "name": "sgilc-inventario",
-  "version": "0.1.0",
-  "description": "Aplicación de escritorio portable para gestión de inventario de laboratorio de cómputo.",
+  "name": "kanri",
+  "version": "1.0.0",
+  "description": "Sistema de gestión de inventario para laboratorio de cómputo.",
   "main": "src/main/main.js",
-  "author": "",
+  "author": "VICTORONJA-MN",
   "license": "MIT",
   "private": true,
   "scripts": {
@@ -23,8 +23,9 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.sgilc.inventario",
-    "productName": "SGILC Inventario",
+    "appId": "com.victoronja.kanri",
+    "productName": "Kanri",
+    "copyright": "MIT © VICTORONJA-MN",
     "directories": {
       "output": "dist"
     },
@@ -35,6 +36,7 @@
     ],
     "npmRebuild": false,
     "asar": true,
+    "icon": "assets/icon",
     "extraResources": [
       {
         "from": "assets",
@@ -46,6 +48,7 @@
     ],
     "win": {
       "signAndEditExecutable": false,
+      "icon": "assets/icon.ico",
       "target": [
         "portable"
       ]
