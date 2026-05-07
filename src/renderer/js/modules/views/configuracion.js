@@ -8,6 +8,13 @@ function isAdmin() {
   return store.get().session?.nombre_rol === 'Admin';
 }
 
+const addUserSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+  <circle cx="9" cy="7" r="4"/>
+  <line x1="19" y1="8" x2="19" y2="14"/>
+  <line x1="22" y1="11" x2="16" y2="11"/>
+</svg>`;
+
 function userForm({ roles, initial, onSubmit }) {
   const data = initial || { username: '', password: '', nombre_completo: '', rol_id: roles?.[0]?.id ?? null };
   const errorBox = el('div');
@@ -49,13 +56,11 @@ function buildThemeSwitch(root) {
   const current = getTheme();
   const isDark = current === 'dark';
 
-  // SVG Luna (tema oscuro activo → ofrecer cambiar a claro)
   const moonSvg = `<svg width="18" height="18" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M15.5 11A4.5 4.5 0 0 1 11 15.5 4.5 4.5 0 0 1 6.5 11 4.5 4.5 0 0 1 11 6.5c.17 0 .34.01.5.03A5.5 5.5 0 1 0 15.5 11Z"
       fill="currentColor" stroke="currentColor" stroke-width="1.2"/>
   </svg>`;
 
-  // SVG Sol (tema claro activo → ofrecer cambiar a oscuro)
   const sunSvg = `<svg width="18" height="18" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="11" cy="11" r="4.5" fill="currentColor"/>
     <path d="M11 3v2M11 17v2M3 11h2M17 11h2M5.64 5.64l1.41 1.41M13.95 13.95l1.41 1.41M5.64 16.36l1.41-1.41M13.95 8.05l1.41-1.41"
@@ -77,7 +82,6 @@ function buildThemeSwitch(root) {
     title: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
     onClick: () => {
       toggleTheme();
-      // Re-render completo para que todo actualice
       renderConfiguracion({ root });
     }
   }, [label, iconWrap]);
@@ -107,6 +111,10 @@ export async function renderConfiguracion({ root }) {
 
   const msg = el('div');
 
+  // Botón Añadir Usuario con SVG en lugar de emoji
+  const addUserIcon = el('span', { 'aria-hidden': 'true', style: 'display:inline-flex;align-items:center;' });
+  addUserIcon.innerHTML = addUserSvg;
+
   const addUserBtn = el('button', {
     class: 'btn primary',
     type: 'button',
@@ -129,12 +137,12 @@ export async function renderConfiguracion({ root }) {
         title: 'Añadir Usuario',
         bodyNode: form.node,
         footerNode: el('div', {}, [
-          el('button', { class: 'btn', type: 'button', onClick: () => closeModal() }, ['Cancelar']),
+          el('button', { class: 'btn',         type: 'button', onClick: () => closeModal()  }, ['Cancelar']),
           el('button', { class: 'btn primary', type: 'button', onClick: () => form.submit() }, ['Guardar'])
         ])
       });
     }
-  }, ['👤 Añadir Usuario']);
+  }, [addUserIcon, ' Añadir Usuario']);
 
   root.appendChild(el('div', { class: 'toolbar' }, [addUserBtn]));
   root.appendChild(msg);
@@ -190,7 +198,7 @@ export async function renderConfiguracion({ root }) {
                 title: `Editar Usuario #${u.id}`,
                 bodyNode: form.node,
                 footerNode: el('div', {}, [
-                  el('button', { class: 'btn', type: 'button', onClick: () => closeModal() }, ['Cancelar']),
+                  el('button', { class: 'btn',         type: 'button', onClick: () => closeModal()  }, ['Cancelar']),
                   el('button', { class: 'btn primary', type: 'button', onClick: () => form.submit() }, ['Guardar'])
                 ])
               });
@@ -248,8 +256,8 @@ export async function renderConfiguracion({ root }) {
     root.appendChild(el('div', { class: 'card span-12' }, [
       el('div', { style: 'font-weight:900', text: 'Permisos del rol "Usuario"' }),
       el('div', { class: 'perm-grid' }, [
-        el('div', { class: 'perm' }, [el('div', { text: 'Crear' }),   canCreate]),
-        el('div', { class: 'perm' }, [el('div', { text: 'Editar' }),  canEdit]),
+        el('div', { class: 'perm' }, [el('div', { text: 'Crear' }),    canCreate]),
+        el('div', { class: 'perm' }, [el('div', { text: 'Editar' }),   canEdit]),
         el('div', { class: 'perm' }, [el('div', { text: 'Eliminar' }), canDelete])
       ]),
       el('div', { class: 'toolbar' }, [savePerms])

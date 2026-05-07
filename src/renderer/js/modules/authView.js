@@ -108,8 +108,8 @@ export async function renderAuth({ mountId }) {
   const wrap = el('div', { class: 'auth-wrap' }, [
     el('div', { class: 'auth-container' }, [
       el('div', { class: 'auth-title' }, [
-        el('h1', { text: 'SGILC' }),
-        el('div', { class: 'auth-subtitle', text: 'I - Laboratorio de Cómputo' })
+        el('h1', { text: 'Kanri' }),
+        el('div', { class: 'auth-subtitle', text: 'Sistema de gestión de inventario' })
       ])
     ])
   ]);

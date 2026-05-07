@@ -5,28 +5,25 @@ import { success, error } from '../notify.js';
 
 async function loadMantenimientos() {
   try {
-    const mantenimientos = await window.api.mantenimientos.list();
-    return mantenimientos;
-  } catch (error) {
-    console.error('Error loading mantenimientos:', error);
+    return await window.api.mantenimientos.list();
+  } catch (err) {
+    console.error('Error loading mantenimientos:', err);
     return [];
   }
 }
 
 async function loadProximos() {
   try {
-    const proximos = await window.api.mantenimientos.proximos();
-    return proximos;
-  } catch (error) {
-    console.error('Error loading proximos:', error);
+    return await window.api.mantenimientos.proximos();
+  } catch (err) {
+    console.error('Error loading proximos:', err);
     return [];
   }
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-ES');
+  return new Date(dateStr).toLocaleDateString('es-ES');
 }
 
 function getEstadoLabel(estado) {
@@ -52,7 +49,7 @@ function getEstadoClass(estado) {
 }
 
 async function renderMantenimientoForm({ mantenimiento, onSave }) {
-  const equipos = await window.api.equipos.list({}); // Cargar equipos para seleccionar
+  const equipos = await window.api.equipos.list({});
 
   const form = el('form', { class: 'form' }, [
     el('div', { class: 'form-group' }, [
@@ -102,25 +99,27 @@ async function renderMantenimientoForm({ mantenimiento, onSave }) {
 export async function renderMantenimientos({ root }) {
   clear(root);
 
-  const proximos = await loadProximos();
-  const mantenimientos = await loadMantenimientos();
-
-  const header = el('div', { class: 'page-header' }, [
-    el('h1', { text: 'Mantenimientos' })
-  ]);
-
-  const proximosSection = el('div', { class: 'section' }, [
-    el('h2', { text: 'Próximos Mantenimientos (Esta Semana)' }),
-    proximos.length > 0 ? el('ul', { class: 'list' }, proximos.map(m => el('li', { class: 'list-item' }, [
-      el('div', { class: 'item-content' }, [
-        el('strong', { text: m.equipo_nombre }),
-        el('span', { text: ` - ${formatDate(m.fecha_proximo)}` }),
-        el('span', { text: getEstadoLabel(m.estado) })
+  // Título y descripción — estructura consistente con los demás módulos
+  root.appendChild(
+    el('div', { class: 'page-title' }, [
+      el('div', {}, [
+        el('h2', { text: 'Mantenimientos' }),
+        el('p', { class: 'hint', text: 'Gestión de mantenimientos de equipos.' })
       ])
-    ]))) : el('p', { text: 'No hay mantenimientos próximos esta semana.' })
+    ])
+  );
+
+  const [proximos, mantenimientos] = await Promise.all([
+    loadProximos(),
+    loadMantenimientos()
   ]);
 
-  const table = el('table', { class: 'table' }, [
+  if (!mantenimientos.length) {
+    root.appendChild(el('div', { class: 'empty', text: 'Sin registros de mantenimiento.' }));
+    return;
+  }
+
+  const table = el('table', {}, [
     el('thead', {}, [
       el('tr', {}, [
         el('th', { text: 'Equipo' }),
@@ -130,43 +129,51 @@ export async function renderMantenimientos({ root }) {
       ])
     ]),
     el('tbody', {}, mantenimientos.map(m => el('tr', {}, [
-      el('td', { text: m.equipo_nombre }),
+      el('td', { text: m.equipo_nombre || '' }),
       el('td', { text: formatDate(m.fecha_proximo) }),
       el('td', { text: getEstadoLabel(m.estado) }),
       el('td', {}, [
         el('div', { class: 'actions' }, [
-          el('button', { class: 'btn small', text: 'Editar', onClick: async () => {
-            const form = await renderMantenimientoForm({
-              mantenimiento: m,
-              onSave: async (data) => {
+          el('button', {
+            class: 'btn',
+            type: 'button',
+            text: 'Editar',
+            onClick: async () => {
+              const form = await renderMantenimientoForm({
+                mantenimiento: m,
+                onSave: async (data) => {
+                  try {
+                    await window.api.mantenimientos.update(data);
+                    success('Mantenimiento actualizado correctamente.');
+                    renderMantenimientos({ root });
+                  } catch (err) {
+                    error('No se pudo actualizar el mantenimiento.');
+                  }
+                }
+              });
+              openModal({ title: 'Editar Mantenimiento', bodyNode: form });
+            }
+          }),
+          el('button', {
+            class: 'btn danger',
+            type: 'button',
+            text: 'Eliminar',
+            onClick: async () => {
+              if (confirm('¿Eliminar este mantenimiento?')) {
                 try {
-                  await window.api.mantenimientos.update(data);
-                  success('Mantenimiento actualizado correctamente.');
+                  await window.api.mantenimientos.delete(m.id);
+                  success('Mantenimiento eliminado correctamente.');
                   renderMantenimientos({ root });
                 } catch (err) {
-                  error('No se pudo actualizar el mantenimiento.');
+                  error('No se pudo eliminar el mantenimiento.');
                 }
               }
-            });
-            openModal({ title: 'Editar Mantenimiento', bodyNode: form });
-          }}),
-          el('button', { class: 'btn small danger', text: 'Eliminar', onClick: async () => {
-            if (confirm('¿Eliminar este mantenimiento?')) {
-              try {
-                await window.api.mantenimientos.delete(m.id);
-                success('Mantenimiento eliminado correctamente.');
-                renderMantenimientos({ root });
-              } catch (err) {
-                error('No se pudo eliminar el mantenimiento.');
-              }
             }
-          }})
+          })
         ])
       ])
     ])))
   ]);
-
-  root.appendChild(header);
-  root.appendChild(proximosSection);
+  
   root.appendChild(table);
 }
