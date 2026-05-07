@@ -7,6 +7,19 @@ function invoke(channel, payload) {
 
 contextBridge.exposeInMainWorld('api', {
   getPaths: () => invoke('app:getPaths'),
+
+  // Resuelve la ruta de un asset sin usar require('path')
+  getAssetUrl: (filename) => {
+    try {
+      const base = process.resourcesPath
+        ? process.resourcesPath.replace(/\\/g, '/') + '/assets'
+        : __dirname.replace(/\\/g, '/') + '/../../assets';
+      return 'file:///' + base.replace(/^\/+/, '') + '/' + filename;
+    } catch (e) {
+      return '';
+    }
+  },
+
   app: {
     reload: () => invoke('app:reload'),
     getPaths: () => invoke('app:getPaths')
