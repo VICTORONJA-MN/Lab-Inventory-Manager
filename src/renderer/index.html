@@ -40,6 +40,7 @@
         letter-spacing: -1px;
         animation: splash-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         position: relative;
+        overflow: hidden;
       }
 
       .splash-name {
@@ -85,7 +86,6 @@
         letter-spacing: 0.5px;
       }
 
-      /* Estilo para el gif de la mona china - esquina superior derecha */
       .splash-anime {
         position: absolute;
         top: 80px;
@@ -99,9 +99,7 @@
         z-index: 1;
       }
 
-      .splash-anime:hover {
-        opacity: 1;
-      }
+      .splash-anime:hover { opacity: 1; }
 
       .splash-anime img {
         width: 100%;
@@ -111,22 +109,12 @@
       }
 
       @keyframes subtle-float {
-        0%, 100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-5px);
-        }
+        0%, 100% { transform: translateY(0px);  }
+        50%       { transform: translateY(-5px); }
       }
 
-      /* Versión para pantallas pequeñas */
       @media (max-width: 768px) {
-        .splash-anime {
-          width: 50px;
-          height: 50px;
-          top: 70px;
-          right: 15px;
-        }
+        .splash-anime { width: 50px; height: 50px; top: 70px; right: 15px; }
       }
 
       @keyframes splash-pop {
@@ -144,34 +132,65 @@
 
     <div id="splash">
       <div class="splash-logo">
-        <img src="../../assets/icon.png" style="width:100%;height:100%;object-fit:cover;border-radius:24px;" />
+        <img id="splash-icon" src="" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:24px;display:none;" />
+        <span id="splash-icon-fallback" style="font-size:38px;font-weight:900;">K</span>
       </div>
       <div class="splash-name">Kanri</div>
       <div class="splash-subtitle">Sistema de gestión de inventario para el laboratorio de cómputo I</div>
-      
-      <!-- Gif de mona china - ubicado en esquina superior derecha -->
+
       <div class="splash-anime">
-        <img src="../../assets/mona.gif" alt="cargando" />
+        <img id="splash-gif" src="" alt="" style="display:none;" />
       </div>
-      
-      <div class="splash-footer">        
+
+      <div class="splash-footer">
         <div class="splash-author">Desarrollado por @VICTORONJA-MN</div>
         <div class="splash-license">Licencia MIT · v0.1.0</div>
       </div>
     </div>
-    
-    <!-- ============================= -->
 
     <div id="app"></div>
     <div id="modal-root" class="modal-root" aria-hidden="true"></div>
 
     <script type="module" src="./js/app.js"></script>
     <script>
-      setTimeout(() => {
+      // Resuelve la ruta de assets via IPC (funciona en dev y producción)
+      // y la guarda en window.__ASSETS_PATH__ para que notify.js también la use
+      window.api.getAssetsPath().then(function(assetsPath) {
+        const base = 'file:///' + assetsPath.replace(/^\/+/, '');
+
+        // Icono del splash
+        const icon = document.getElementById('splash-icon');
+        const fallback = document.getElementById('splash-icon-fallback');
+        icon.src = base + '/icon.png';
+        icon.onload = function() {
+          icon.style.display = 'block';
+          fallback.style.display = 'none';
+        };
+        icon.onerror = function() {
+          // Si no carga icon.png intenta icon.jpg
+          icon.src = base + '/icon.png';
+          icon.onload = function() {
+            icon.style.display = 'block';
+            fallback.style.display = 'none';
+          };
+        };
+
+        // Gif del splash
+        const gif = document.getElementById('splash-gif');
+        gif.src = base + '/mona.gif';
+        gif.onload = function() { gif.style.display = 'block'; };
+
+        // Guardar ruta global para notify.js y cualquier otro módulo
+        window.__ASSETS_PATH__ = base;
+      }).catch(function() {
+        // Si falla el IPC no pasa nada, el splash sigue con la K de fallback
+      });
+
+      // Ocultar splash después de 2.2s
+      setTimeout(function() {
         const splash = document.getElementById('splash');
         if (splash) splash.classList.add('hide');
-        // Lo elimina del DOM completamente después del fade (0.6s)
-        setTimeout(() => splash?.remove(), 650);
+        setTimeout(function() { splash && splash.remove(); }, 650);
       }, 2200);
     </script>
   </body>

@@ -1,7 +1,7 @@
 import { el } from './dom.js';
 
 let notificationContainer = null;
-let resolvedGifUrl = null; // Cache para no llamar IPC en cada notificación
+let resolvedGifUrl = null;
 
 const NOTIFICATION_TYPES = {
   success: { icon: '✓', color: 'success' },
@@ -18,15 +18,19 @@ function ensureContainer() {
   return notificationContainer;
 }
 
-// Resuelve la URL del gif una sola vez usando las rutas que ya conoce la app
 async function getGifUrl() {
   if (resolvedGifUrl !== null) return resolvedGifUrl;
   try {
-    const paths = window.__APP_PATHS__ || await window.api.getPaths();
-    // baseDir es process.cwd() en dev y app.getPath('userData') en producción
-    // pero los assets van en extraResources, no en userData.
-    // Usamos la URL relativa que funciona en el renderer directamente.
-    resolvedGifUrl = '../../assets/mona.gif';
+    // Usa la ruta ya resuelta por el splash en index.html
+    // Si aún no está lista (notificación muy temprana), la pide via IPC
+    if (window.__ASSETS_PATH__) {
+      resolvedGifUrl = window.__ASSETS_PATH__ + '/mona.gif';
+    } else {
+      const assetsPath = await window.api.getAssetsPath();
+      const base = 'file:///' + assetsPath.replace(/^\/+/, '');
+      window.__ASSETS_PATH__ = base;
+      resolvedGifUrl = base + '/mona.gif';
+    }
   } catch (e) {
     resolvedGifUrl = '';
   }

@@ -7,6 +7,7 @@ function invoke(channel, payload) {
 
 contextBridge.exposeInMainWorld('api', {
   getPaths: () => invoke('app:getPaths'),
+  getAssetsPath: () => invoke('app:getAssetsPath'),
 
   // Resuelve la ruta de un asset sin usar require('path')
   getAssetUrl: (filename) => {

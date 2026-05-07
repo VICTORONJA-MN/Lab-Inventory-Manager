@@ -98,6 +98,15 @@ ipcMain.handle('app:getPaths', async () => getDbPaths());
 ipcMain.handle('app:reload', async () => {
   if (mainWindow) mainWindow.reload();
 });
+
+// Devuelve la ruta correcta de assets tanto en dev como en producción empaquetada
+ipcMain.handle('app:getAssetsPath', () => {
+  const assetsPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'assets')
+    : path.join(__dirname, '../../assets');
+  return assetsPath.replace(/\\/g, '/');
+});
+
 ipcMain.handle('auth:sessionStatus', async () => auth.sessionStatus());
 ipcMain.handle('auth:login', async (_evt, payload) => auth.login(payload));
 ipcMain.handle('auth:logout', async () => auth.logout());
@@ -128,11 +137,9 @@ ipcMain.handle('mantenimientos:proximos', async () => mantenimientos.getMantenim
 ipcMain.handle('backups:exportDb', async () => backups.exportDb({ dialog }));
 ipcMain.handle('backups:importDb', async () => backups.importDb({ dialog }));
 
-// Reset total del sistema — verifica contraseña, borra DB + uploads y cierra la app
 ipcMain.handle('system:reset', async (_evt, payload) => {
   const res = await backups.resetSystem(payload);
   if (!res.ok) return res;
-  // Pequeño delay para que el renderer reciba la respuesta antes de cerrar
   setTimeout(() => app.quit(), 500);
   return { ok: true };
 });
