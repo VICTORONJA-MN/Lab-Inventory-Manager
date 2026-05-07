@@ -724,3 +724,6 @@ tr:hover td { background: var(--surface-hover); }
   font-size: 13px;
   line-height: 1.5;
 }
+.danger-zone .btn {
+  align-self: flex-start;
+}

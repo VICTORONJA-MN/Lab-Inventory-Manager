@@ -1,3 +1,4 @@
+// preload.js
 const { contextBridge, ipcRenderer } = require('electron');
 
 function invoke(channel, payload) {
@@ -47,9 +48,11 @@ contextBridge.exposeInMainWorld('api', {
     exportDb: () => invoke('backups:exportDb'),
     importDb: () => invoke('backups:importDb')
   },
+  system: {
+    reset: (payload) => invoke('system:reset', payload)
+  },
   reportes: {
     generar: (payload) => invoke('reportes:generar', payload),
     getCategorias: () => invoke('reportes:getCategorias')
   }
 });
-

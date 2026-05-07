@@ -1,15 +1,14 @@
-//backups.js
+//backups.js (servicio)
 const fs = require('fs');
 const path = require('path');
-const { getDbPaths, persistDb } = require('./db');
+const bcrypt = require('bcryptjs');
+const { getDbPaths, persistDb, get } = require('./db');
 const { requireAdmin } = require('./auth');
 
 async function exportDb({ dialog }) {
   requireAdmin();
   const { dbPath } = getDbPaths();
 
-  // OPTIMIZACIÓN: forzar un persist antes de exportar para asegurar
-  // que el archivo en disco esté al día con el estado en memoria
   persistDb();
 
   const res = await dialog.showSaveDialog({
@@ -39,4 +38,29 @@ async function importDb({ dialog }) {
   return { ok: true };
 }
 
-module.exports = { exportDb, importDb };
+async function resetSystem({ password }) {
+  const session = requireAdmin();
+
+  // Verificar contraseña del usuario en sesión antes de borrar nada
+  const row = await get('SELECT password_hash FROM usuarios WHERE id = ?;', [session.id]);
+  if (!row) return { ok: false, error: 'Usuario no encontrado.' };
+
+  const valid = await bcrypt.compare(String(password || ''), row.password_hash);
+  if (!valid) return { ok: false, error: 'Contraseña incorrecta.' };
+
+  const { dbPath, uploadsPath } = getDbPaths();
+
+  // Borrar base de datos
+  if (fs.existsSync(dbPath)) {
+    fs.unlinkSync(dbPath);
+  }
+
+  // Borrar carpeta de uploads recursivamente
+  if (fs.existsSync(uploadsPath)) {
+    fs.rmSync(uploadsPath, { recursive: true, force: true });
+  }
+
+  return { ok: true };
+}
+
+module.exports = { exportDb, importDb, resetSystem };

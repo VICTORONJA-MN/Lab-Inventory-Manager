@@ -24,14 +24,9 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      // OPTIMIZACIÓN: evita que el renderer se frene si la ventana pierde el foco
       backgroundThrottling: false,
     }
   });
-
-  // OPTIMIZACIÓN: eliminado el listener did-finish-load que ejecutaba
-  // executeJavaScript para leer el HTML completo — era innecesario en producción
-  // y añadía una operación costosa en cada carga de página.
 
   mainWindow.webContents.on('render-process-gone', (event, details) => {
     console.error('[renderer crashed]', details);
@@ -40,7 +35,6 @@ async function createWindow() {
     console.error('[did-fail-load]', errorCode, errorDescription, validatedURL);
   });
 
-  // --- LÓGICA DE DETECCIÓN DE PRIMER INICIO ---
   let needsBootstrap = false;
   try {
     const status = await auth.sessionStatus();
@@ -56,7 +50,6 @@ async function createWindow() {
   mainWindow.loadFile(indexPath, {
     query: { bootstrap: needsBootstrap ? 'true' : 'false' }
   });
-  // --------------------------------------------
 
   mainWindow.once('ready-to-show', () => mainWindow.show());
 }
@@ -103,9 +96,7 @@ app.on('window-all-closed', () => {
 
 ipcMain.handle('app:getPaths', async () => getDbPaths());
 ipcMain.handle('app:reload', async () => {
-  if (mainWindow) {
-    mainWindow.reload();
-  }
+  if (mainWindow) mainWindow.reload();
 });
 ipcMain.handle('auth:sessionStatus', async () => auth.sessionStatus());
 ipcMain.handle('auth:login', async (_evt, payload) => auth.login(payload));
@@ -136,6 +127,15 @@ ipcMain.handle('mantenimientos:proximos', async () => mantenimientos.getMantenim
 
 ipcMain.handle('backups:exportDb', async () => backups.exportDb({ dialog }));
 ipcMain.handle('backups:importDb', async () => backups.importDb({ dialog }));
+
+// Reset total del sistema — verifica contraseña, borra DB + uploads y cierra la app
+ipcMain.handle('system:reset', async (_evt, payload) => {
+  const res = await backups.resetSystem(payload);
+  if (!res.ok) return res;
+  // Pequeño delay para que el renderer reciba la respuesta antes de cerrar
+  setTimeout(() => app.quit(), 500);
+  return { ok: true };
+});
 
 ipcMain.handle('reportes:generar', async (_evt, payload) => {
   const res = await reportes.generar(payload);
