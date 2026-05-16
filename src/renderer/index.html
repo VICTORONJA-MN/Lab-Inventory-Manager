@@ -144,7 +144,7 @@
 
       <div class="splash-footer">
         <div class="splash-author">Desarrollado por @VICTORONJA-MN</div>
-        <div class="splash-license">Licencia MIT · v0.1.0</div>
+        <div class="splash-license">Licencia MIT · v1.0.0</div>
       </div>
     </div>
 
@@ -167,7 +167,7 @@
           fallback.style.display = 'none';
         };
         icon.onerror = function() {
-          // Si no carga icon.png intenta icon.jpg
+        
           icon.src = base + '/icon.png';
           icon.onload = function() {
             icon.style.display = 'block';
@@ -183,7 +183,7 @@
         // Guardar ruta global para notify.js y cualquier otro módulo
         window.__ASSETS_PATH__ = base;
       }).catch(function() {
-        // Si falla el IPC no pasa nada, el splash sigue con la K de fallback
+        // Si falla el IPC el splash sigue con la K de fallback
       });
 
       // Ocultar splash después de 2.2s
