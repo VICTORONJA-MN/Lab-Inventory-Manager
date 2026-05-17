@@ -4,6 +4,8 @@
 
 ![Kanri Logo](./assets/icon.png)
 
+<img src="./assets/mona.gif" width="60" alt="@VICTORONJA-MN" title="@VICTORONJA-MN" />
+
 **Aplicación de escritorio portable para la gestión de inventario de laboratorios de cómputo.**
 
 [![Electron](https://img.shields.io/badge/Electron-30.5.1-47848F?style=flat&logo=electron&logoColor=white)](https://www.electronjs.org/)
@@ -39,16 +41,18 @@ La aplicación es completamente portable: basta con ejecutar el `.exe` para empe
 
 | | |
 |---|---|
+| **Bienvenida** | ![Bienvenida](./assets/bienvenida.png) |
+| **Primer inicio** | ![sigin](./assets/sigin.png) |
 | **Login** | ![Login](./assets/login.png) |
-| **Dashboard** | ![Dashboard](./assets/dashboard.png) |
+| **Dashboard** | ![Dashboard](./assets/inicio.png) |
 | **Inventario — Modo Tabla** | ![Tabla](./assets/modo_tabla.png) |
 | **Inventario — Modo Tarjetas** | ![Tarjetas](./assets/modo_tajetas.png) |
 | **Añadir Equipo** | ![Añadir](./assets/añadir.png) |
 | **Mantenimientos** | ![Mantenimientos](./assets/mantenimientos.png) |
 | **Generar Reporte** | ![Generar](./assets/generar_reportes.png) |
 | **Reporte Excel** | ![Reporte](./assets/reporte.png) |
-| **Backup** | ![Backup](./assets/importar_exportar_db.png) |
-| **Gestión de Usuarios y Roles** | ![Usuarios](./assets/gestion_usurios_roles.png) |
+| **Backup** | ![Backup](./assets/backup.png) |
+| **Gestión de Usuarios y Roles** | ![Usuarios](./assets/configuracion.png) |
 | **Perfil** | ![Perfil](./assets/perfil.png) |
 
 ---
